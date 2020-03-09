@@ -1,24 +1,29 @@
-import json
 from app import app, db
 from app.models import *
-from flask import request
+from flask import request, jsonify
+from marshmallow import ValidationError, EXCLUDE
 
 
 @app.route('/')
 def hello_world():
-    return json.dumps({'text': 'Hello World!!!'})
+    return jsonify({'text': 'Hello World!!!'})
 
 @app.route('/users', methods=['POST'])
 def create_user():
     user_schema = user.UserSchema()
-    data = request.get_json()
-    new_user = user.User(username=data['username'], email=data['email'])
-    # make sure password1 and password2 are the same
-    new_user.set_password(data['password'])
-    db.session.add(new_user)
-    db.session.commit()
+    user_data = request.get_json()
+    try:
+        # TODO: Move this into marshmallow validation in the schema. I ran into some weird/unexpected
+        # behavior, so will come back to this and improve the validation later.
+        if not user_data['password'] or not user_data['password2'] or user_data['password'] != user_data['password2']:
+            raise ValidationError('Passwords do not match.', 'password')
+        new_user = user_schema.load(user_data, unknown=EXCLUDE)
+        db.session.add(new_user)
+        db.session.commit()
 
-    return user_schema.dump(new_user)
+        return jsonify(user_schema.dump(new_user)), 200
+    except ValidationError as err:
+        return jsonify(err.messages), 400
 
 @app.route('/users/<int:id>', methods=['GET'])
 def get_user(id):
