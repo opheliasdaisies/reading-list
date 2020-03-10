@@ -1,6 +1,6 @@
 from app import db, ma
 from werkzeug.security import generate_password_hash, check_password_hash
-from marshmallow import fields, post_load, validate, validates_schema, ValidationError
+from marshmallow import fields, post_load, validate, validates_schema, ValidationError, EXCLUDE
 
 
 class User(db.Model):
@@ -33,8 +33,8 @@ def validate_unique_email(email):
 class UserSchema(ma.SQLAlchemySchema):
     class Meta:
         model = User
+        unknown = EXCLUDE
 
-    #Check to make sure username and email are unique
     id = ma.auto_field()
     username = ma.String(required=True, validate=[validate.Length(min=1, max=80), validate_unique_username])
     email = ma.Email(required=True, validate=[validate.Length(min=1, max=120), validate_unique_email])
