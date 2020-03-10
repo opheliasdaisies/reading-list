@@ -46,4 +46,7 @@ def update_user(id, data):
 
 @app.route('/users/<int:id>', methods=['DELETE'])
 def delete_user(id):
-    pass
+    user_obj = User.query.get_or_404(id)
+    db.session.delete(user_obj)
+    db.session.commit()
+    return {}, 204
